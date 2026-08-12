@@ -1,0 +1,20 @@
+{
+  "name": "electron-tray-base",
+  "version": "1.0.0",
+  "description": "Shared Electron tray-app scaffold for native-renderer Windows/macOS utilities.",
+  "author": {
+    "name": "Taylor Ivanoff"
+  },
+  "repository": "https://github.com/taylorivanoff/electron-tray-base",
+  "main": "index.js",
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.9"
+  },
+  "peerDependencies": {
+    "electron": ">=28"
+  },
+  "scripts": {
+    "postinstall": "node -e \"try{require('fs').rmSync('node_modules/electron',{recursive:true,force:true});require('fs').rmSync('node_modules/@electron',{recursive:true,force:true})}catch(e){}\""
+  }
+}
