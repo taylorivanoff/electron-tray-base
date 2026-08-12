@@ -3,27 +3,42 @@ const { Tray, Menu, nativeImage, app } = require('electron');
 let tray = null;
 let trayState = null;
 
-function buildDefaultTrayMenu({ appName, handlers, extraSections = [] }) {
+function buildDefaultTrayMenu({
+  appName,
+  handlers,
+  extraSections = [],
+  showHide = true,
+  showAlwaysOnTop = true
+}) {
   const settings = handlers.getSettings();
   const sections = [
-    [
-      { label: `Show ${appName}`, click: () => handlers.showWindow() },
-      { label: `Hide ${appName}`, click: () => handlers.hideWindow() }
-    ],
-    [
-      {
-        label: 'Always on Top',
-        type: 'checkbox',
-        checked: !!settings.alwaysOnTop,
-        click: (item) => handlers.setAlwaysOnTop(item.checked)
-      },
-      {
+    showHide
+      ? [
+        { label: `Show ${appName}`, click: () => handlers.showWindow() },
+        { label: `Hide ${appName}`, click: () => handlers.hideWindow() }
+      ]
+      : [{ label: `Show ${appName}`, click: () => handlers.showWindow() }],
+    showAlwaysOnTop
+      ? [
+        {
+          label: 'Always on Top',
+          type: 'checkbox',
+          checked: !!settings.alwaysOnTop,
+          click: (item) => handlers.setAlwaysOnTop(item.checked)
+        },
+        {
+          label: 'Start Minimised',
+          type: 'checkbox',
+          checked: !!settings.startMinimised,
+          click: (item) => handlers.setStartMinimised(item.checked)
+        }
+      ]
+      : [{
         label: 'Start Minimised',
         type: 'checkbox',
         checked: !!settings.startMinimised,
         click: (item) => handlers.setStartMinimised(item.checked)
-      }
-    ],
+      }],
     ...extraSections,
     [
       { label: 'Check for Updates', click: () => handlers.checkForUpdates(true) },
@@ -40,9 +55,17 @@ function buildDefaultTrayMenu({ appName, handlers, extraSections = [] }) {
   return Menu.buildFromTemplate(items);
 }
 
-function createTray({ iconPath, appName, handlers, extraSections = [], onClick = 'toggle' }) {
+function createTray({
+  iconPath,
+  appName,
+  handlers,
+  extraSections = [],
+  onClick = 'toggle',
+  showHide = true,
+  showAlwaysOnTop = true
+}) {
   if (tray) return tray;
-  trayState = { appName, handlers, extraSections, onClick };
+  trayState = { appName, handlers, extraSections, onClick, showHide, showAlwaysOnTop };
 
   let image = nativeImage.createFromPath(iconPath);
   if (image.isEmpty()) image = nativeImage.createEmpty();
@@ -75,7 +98,9 @@ function updateTrayMenu(state = trayState) {
     handlers: state.handlers,
     extraSections: typeof state.extraSections === 'function'
       ? state.extraSections(state.handlers)
-      : (state.extraSections || [])
+      : (state.extraSections || []),
+    showHide: state.showHide !== false,
+    showAlwaysOnTop: state.showAlwaysOnTop !== false
   }));
 }
 

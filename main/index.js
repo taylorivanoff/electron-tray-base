@@ -43,15 +43,19 @@ const { setupSleepResumeRefresh } = require('./sleep');
  *     enabled?: boolean;
  *     configureFeed?: (autoUpdater: object) => void;
  *   };
+ *   protocol?: string;
  *   tray?: {
  *     extraSections?: (handlers: object) => Array<Array<object>>;
  *     onClick?: 'toggle' | 'show';
+ *     showHide?: boolean;
+ *     showAlwaysOnTop?: boolean;
  *   };
  *   dev?: { reloader?: boolean | object; entryModule?: object };
  *   sleep?: { enabled?: boolean; onResume?: (win: import('electron').BrowserWindow) => void };
  *   hooks?: {
  *     getSettings?: () => object;
  *     setSettings?: (partial: object) => object;
+ *     getAppState?: () => object;
  *     onReady?: (ctx: object) => void;
  *     onWindowCreated?: (win: import('electron').BrowserWindow, ctx: object) => void;
  *     onDidFinishLoad?: (win: import('electron').BrowserWindow, ctx: object) => void;
@@ -65,6 +69,7 @@ function run(config) {
   const {
     appName,
     appId,
+    protocol,
     iconPath,
     splashPath,
     store: storeConfig,
@@ -145,8 +150,25 @@ function run(config) {
       appName,
       handlers: trayHandlers,
       extraSections: trayConfig.extraSections,
-      onClick: trayConfig.onClick
+      onClick: trayConfig.onClick,
+      showHide: trayConfig.showHide,
+      showAlwaysOnTop: trayConfig.showAlwaysOnTop
     });
+  }
+
+  function focusMainWindow() {
+    const win = getMainWindow();
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    if (!win.isVisible()) win.show();
+    win.focus();
+  }
+
+  function handleProtocolUrl(url) {
+    if (!url) return;
+    showMainWindow(createWindow);
+    focusMainWindow();
+    if (typeof hooks.onProtocolUrl === 'function') hooks.onProtocolUrl(url, buildContext());
   }
 
   function buildContext() {
@@ -208,8 +230,25 @@ function run(config) {
     setupDevReloader(dev.entryModule || module, typeof dev.reloader === 'object' ? dev.reloader : {});
   }
 
-  if (!setupSingleInstance({ onSecondInstance: () => showMainWindow(createWindow) })) {
+  if (!setupSingleInstance({
+    onSecondInstance: (argv) => {
+      showMainWindow(createWindow);
+      focusMainWindow();
+      if (protocol) {
+        const url = argv.find((arg) => arg.startsWith(`${protocol}://`));
+        if (url) handleProtocolUrl(url);
+      }
+    }
+  })) {
     return;
+  }
+
+  if (protocol) {
+    app.setAsDefaultProtocolClient(protocol);
+    app.on('open-url', (event, url) => {
+      event.preventDefault();
+      handleProtocolUrl(url);
+    });
   }
 
   app.whenReady().then(() => {
@@ -222,7 +261,8 @@ function run(config) {
 
     registerSettingsIpc({
       getSettings: readSettings,
-      setSettings: (partial) => writeSettings(partial || {})
+      setSettings: (partial) => writeSettings(partial || {}),
+      getAppState: hooks.getAppState
     });
 
     if (typeof hooks.registerIpc === 'function') hooks.registerIpc(buildContext());
@@ -248,7 +288,9 @@ function run(config) {
       appName,
       handlers: trayHandlers,
       extraSections: trayConfig.extraSections,
-      onClick: trayConfig.onClick ?? 'toggle'
+      onClick: trayConfig.onClick ?? 'toggle',
+      showHide: trayConfig.showHide,
+      showAlwaysOnTop: trayConfig.showAlwaysOnTop
     });
 
     if (sleep.enabled !== false) {
@@ -273,9 +315,28 @@ function run(config) {
     if (typeof hooks.onReady === 'function') hooks.onReady(buildContext());
   });
 
-  app.on('before-quit', () => {
+  let quitInProgress = false;
+  app.on('before-quit', (event) => {
     isQuittingRef.current = true;
-    if (typeof hooks.onBeforeQuit === 'function') hooks.onBeforeQuit(buildContext());
+    if (typeof hooks.onBeforeQuit !== 'function') {
+      destroyTray();
+      return;
+    }
+
+    const result = hooks.onBeforeQuit(buildContext());
+    if (result && typeof result.then === 'function') {
+      if (quitInProgress) return;
+      quitInProgress = true;
+      event.preventDefault();
+      result
+        .catch(() => {})
+        .finally(() => {
+          destroyTray();
+          app.exit(0);
+        });
+      return;
+    }
+
     destroyTray();
   });
 
@@ -296,6 +357,7 @@ module.exports = {
   setupSingleInstance,
   setupSleepResumeRefresh,
   setupDevReloader,
+  attachWindowBoundsLogger: require('./dev').attachWindowBoundsLogger,
   hasStartMinimizedArg: require('./login').hasStartMinimizedArg,
   wasLaunchedMinimised,
   syncLoginItemArgs,

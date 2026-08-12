@@ -61,7 +61,7 @@ function createMainWindow({
   applyWindowOpacity(mainWindow, settings.opacity);
 
   const boundsSaver = createBoundsSaver(store, getMainWindow, boundsOptions);
-  boundsSaver.attach(mainWindow);
+  boundsSaver.attach(mainWindow, 'main');
 
   mainWindow.webContents.on('did-finish-load', () => {
     closeSplash();

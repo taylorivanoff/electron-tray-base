@@ -7,12 +7,14 @@
   },
   "repository": "https://github.com/taylorivanoff/electron-tray-base",
   "main": "index.js",
-  "dependencies": {
+  "peerDependencies": {
+    "electron": ">=28",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.8.9"
   },
-  "peerDependencies": {
-    "electron": ">=28"
+  "devDependencies": {
+    "electron-store": "^8.2.0",
+    "electron-updater": "^6.8.9"
   },
   "scripts": {
     "postinstall": "node -e \"try{require('fs').rmSync('node_modules/electron',{recursive:true,force:true});require('fs').rmSync('node_modules/@electron',{recursive:true,force:true})}catch(e){}\""

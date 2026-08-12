@@ -1,5 +1,6 @@
 const { screen } = require('electron');
 const { BOUNDS_SAVE_DEBOUNCE_MS } = require('./constants');
+const { attachWindowBoundsLogger } = require('./dev');
 
 function normalizeBounds(raw, { minWidth, minHeight, defaultBounds }) {
   const defaults = {
@@ -68,7 +69,8 @@ function createBoundsSaver(store, getMainWindow, options) {
     timer = setTimeout(save, BOUNDS_SAVE_DEBOUNCE_MS);
   }
 
-  function attach(win) {
+  function attach(win, label = 'window') {
+    attachWindowBoundsLogger(win, label);
     win.on('resize', () => persist(false));
     win.on('move', () => persist(false));
     win.on('resized', () => persist(true));

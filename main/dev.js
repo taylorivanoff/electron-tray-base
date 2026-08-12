@@ -1,7 +1,11 @@
 const { app } = require('electron');
 
+function isDev() {
+  return !app.isPackaged;
+}
+
 function setupDevReloader(entryModule, options = {}) {
-  if (app.isPackaged) return;
+  if (!isDev()) return;
   try {
     require('electron-reloader')(entryModule, {
       watchRenderer: true,
@@ -13,4 +17,18 @@ function setupDevReloader(entryModule, options = {}) {
   }
 }
 
-module.exports = { setupDevReloader };
+function attachWindowBoundsLogger(win, label = 'window') {
+  if (!isDev() || !win) return;
+
+  const logSize = (event) => {
+    if (win.isDestroyed()) return;
+    const { width, height } = win.getBounds();
+    console.log(`[dev] ${label} ${event}: ${width}x${height}`);
+  };
+
+  logSize('size');
+  win.on('resize', () => logSize('resize'));
+  win.on('resized', () => logSize('resized'));
+}
+
+module.exports = { isDev, setupDevReloader, attachWindowBoundsLogger };
