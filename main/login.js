@@ -16,13 +16,20 @@ function wasLaunchedMinimised(argv = process.argv) {
   return hasStartMinimizedArg(argv);
 }
 
+function loginItemArgs(getStartMinimised) {
+  const minimisedArgs = getStartMinimised() ? [START_MINIMIZED_ARG] : [];
+  if (app.isPackaged) return minimisedArgs;
+  // Dev: distinguish apps that share the same electron.exe binary.
+  return [app.getAppPath(), ...minimisedArgs];
+}
+
 function syncLoginItemArgs(getStartMinimised) {
   const login = app.getLoginItemSettings();
   if (!login.openAtLogin) return;
   app.setLoginItemSettings({
     openAtLogin: true,
     path: process.execPath,
-    args: getStartMinimised() ? [START_MINIMIZED_ARG] : []
+    args: loginItemArgs(getStartMinimised)
   });
 }
 
@@ -30,7 +37,7 @@ function enableOpenAtLogin(getStartMinimised) {
   app.setLoginItemSettings({
     openAtLogin: true,
     path: process.execPath,
-    args: getStartMinimised() ? [START_MINIMIZED_ARG] : []
+    args: loginItemArgs(getStartMinimised)
   });
 }
 

@@ -11,15 +11,12 @@ function setupAutoUpdater({
   onUpdateFound,
   onQuitForInstall
 }) {
-  let manualUpdateCheck = false;
-
-  async function checkForUpdates(manual = false) {
+  async function checkForUpdates(_manual = false) {
     if (!enabled) return;
-    manualUpdateCheck = manual;
     try {
       await autoUpdater.checkForUpdates();
     } catch (_) {
-      manualUpdateCheck = false;
+      // Ignore transient network or feed errors; next interval will retry.
     }
   }
 
@@ -40,18 +37,9 @@ function setupAutoUpdater({
     }).show();
   });
 
-  autoUpdater.on('update-not-available', () => {
-    manualUpdateCheck = false;
-  });
-
   autoUpdater.on('update-downloaded', () => {
-    manualUpdateCheck = false;
     if (typeof onQuitForInstall === 'function') onQuitForInstall();
     autoUpdater.quitAndInstall(true, true);
-  });
-
-  autoUpdater.on('error', () => {
-    manualUpdateCheck = false;
   });
 
   checkForUpdates(false);

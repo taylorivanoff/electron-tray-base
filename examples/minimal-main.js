@@ -3,7 +3,12 @@
  * Font Checker / PDF to TXT style migration with a custom store module.
  */
 const path = require('path');
-const { run } = require('electron-tray-base');
+const { configureAppIsolation, run } = require('electron-tray-base');
+
+configureAppIsolation({
+  appId: 'io.github.example.my-utility',
+  appName: 'My Utility'
+});
 
 // const appStore = require('./store');
 

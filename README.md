@@ -12,6 +12,7 @@ Shared **Electron scaffold** for **tray-first utility apps** with a native rende
 | **Login item** | Sync `--start-minimised` args; optional enable-on-ready |
 | **Start minimised** | Manual launch always shows; login launch respects toggle |
 | **Single instance** | Ignores duplicate boot instances that pass `--start-minimised` |
+| **App isolation** | Per-app `userData`, Windows AppUserModelId, session partitions, and login-item args |
 | **Auto-updater** | GitHub releases via `electron-updater`; optional custom feed |
 | **IPC** | `app:getState`, `settings:get`, `settings:set` |
 | **Sleep/resume** | Optional reload when system wakes (default: reload main window) |
@@ -29,6 +30,19 @@ Also used by [`icloud-windows-base`](https://github.com/taylorivanoff/icloud-win
 | `updater.silent` | `false` | Skip update-available notification |
 
 `hooks.onBeforeQuit` may return a Promise to delay quit until async work finishes (e.g. cookie flush).
+
+## Windows / multi-app isolation
+
+Call `configureAppIsolation({ appId, appName })` **before** any module that reads `app.getPath('userData')` (including `electron-store`). `run()` also calls it, but stores loaded earlier would miss the isolated path.
+
+Each app should pass a unique `build.appId` from `package.json`. Electron-tray-base then:
+
+- Pins `%APPDATA%/<appId>` as `userData` (migrates legacy data on first run)
+- Sets Windows `AppUserModelId` for taskbar / toast grouping
+- Uses per-app single-instance mutexes (derived from `userData`)
+- Registers dev-mode login items with `electron.exe <appPath>` so sibling tray apps do not clobber each other
+
+iCloud wrappers additionally use an `appId`-derived Chromium session partition instead of a shared `persist:icloud` name.
 
 ## Relationship to icloud-windows-base
 

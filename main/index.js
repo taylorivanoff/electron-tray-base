@@ -1,4 +1,4 @@
-const { app, ipcMain } = require('electron');
+const { app } = require('electron');
 const { createPrefsStore, readCommonSettings, applyCommonSettings } = require('./store');
 const { syncLoginItemArgs, enableOpenAtLogin, wasLaunchedMinimised } = require('./login');
 const { createSplash } = require('./splash');
@@ -17,6 +17,7 @@ const { setupSingleInstance } = require('./lifecycle');
 const { setupDevReloader } = require('./dev');
 const { registerSettingsIpc } = require('./ipc');
 const { setupSleepResumeRefresh } = require('./sleep');
+const { configureAppIsolation, readAppIdFromPackage, sessionPartition } = require('./isolation');
 
 /**
  * Run a tray-first Electron utility with a native renderer.
@@ -82,6 +83,8 @@ function run(config) {
     sleep = {},
     hooks = {}
   } = config;
+
+  configureAppIsolation({ appId, appName });
 
   const isQuittingRef = { current: false };
   let checkForUpdates = () => {};
@@ -253,8 +256,6 @@ function run(config) {
   }
 
   app.whenReady().then(() => {
-    if (appId && process.platform === 'win32') app.setAppUserModelId(appId);
-
     if (loginItem.syncOnReady !== false) syncLoginItemArgs(readStartMinimised);
     if (loginItem.enableOnReady) enableOpenAtLogin(readStartMinimised);
 
@@ -353,6 +354,9 @@ function run(config) {
 
 module.exports = {
   run,
+  configureAppIsolation,
+  readAppIdFromPackage,
+  sessionPartition,
   createPrefsStore,
   registerSettingsIpc,
   setupAutoUpdater,
