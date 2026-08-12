@@ -6,6 +6,7 @@ function setupAutoUpdater({
   appName,
   iconPath,
   enabled = app.isPackaged,
+  silent = false,
   configureFeed,
   onUpdateFound,
   onQuitForInstall
@@ -31,7 +32,7 @@ function setupAutoUpdater({
 
   autoUpdater.on('update-available', (info) => {
     if (typeof onUpdateFound === 'function') onUpdateFound(info);
-    if (!Notification.isSupported()) return;
+    if (silent || !Notification.isSupported()) return;
     new Notification({
       title: appName,
       body: `Update ${info.version} found. The app will update and restart.`,

@@ -41,6 +41,7 @@ const { setupSleepResumeRefresh } = require('./sleep');
  *   loginItem?: { syncOnReady?: boolean; enableOnReady?: boolean };
  *   updater?: {
  *     enabled?: boolean;
+ *     silent?: boolean;
  *     configureFeed?: (autoUpdater: object) => void;
  *   };
  *   protocol?: string;
@@ -306,6 +307,7 @@ function run(config) {
       appName,
       iconPath,
       enabled: updater.enabled ?? app.isPackaged,
+      silent: updater.silent ?? false,
       configureFeed: updater.configureFeed,
       onQuitForInstall: () => {
         isQuittingRef.current = true;
@@ -361,5 +363,8 @@ module.exports = {
   hasStartMinimizedArg: require('./login').hasStartMinimizedArg,
   wasLaunchedMinimised,
   syncLoginItemArgs,
-  enableOpenAtLogin
+  enableOpenAtLogin,
+  readCommonSettings,
+  applyCommonSettings,
+  getMainWindow
 };
