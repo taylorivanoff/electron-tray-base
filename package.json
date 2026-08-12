@@ -1,6 +1,6 @@
 {
   "name": "electron-tray-base",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared Electron tray-app scaffold for native-renderer Windows/macOS utilities.",
   "author": {
     "name": "Taylor Ivanoff"

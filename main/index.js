@@ -54,6 +54,7 @@ const { setupSleepResumeRefresh } = require('./sleep');
  *     setSettings?: (partial: object) => object;
  *     onReady?: (ctx: object) => void;
  *     onWindowCreated?: (win: import('electron').BrowserWindow, ctx: object) => void;
+ *     onDidFinishLoad?: (win: import('electron').BrowserWindow, ctx: object) => void;
  *     onSettingsChanged?: (partial: object, settings: object, ctx: object) => void;
  *     onBeforeQuit?: (ctx: object) => void;
  *     registerIpc?: (ctx: object) => void;
@@ -197,6 +198,7 @@ function run(config) {
       },
       onDidFinishLoad: (loadedWin) => {
         applyWindowOpacity(loadedWin, readSettings().opacity);
+        if (typeof hooks.onDidFinishLoad === 'function') hooks.onDidFinishLoad(loadedWin, buildContext());
       }
     });
     return win;
